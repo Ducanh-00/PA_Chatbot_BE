@@ -8,10 +8,11 @@ from langchain_text_splitters import (
     RecursiveCharacterTextSplitter,
     MarkdownHeaderTextSplitter,
 )
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
+from app.core.config import settings
 
 # Config - Use absolute paths relative to project root
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,12 +20,9 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 QDRANT_PATH = os.path.join(BASE_DIR, "qdrant_db")
 CHUNKS_PATH = os.path.join(BASE_DIR, "all_chunks.pkl")
 COLLECTION_NAME = "pa_procedures"
-EMBEDDING_MODEL_NAME = "keepitreal/vietnamese-sbert"
-
-# 1. Init Embedding Model (Dense)
-#Load model AI chuyên chuyển text tiếng Việt thành vector 768 chiều
-print(f"Loading dense embedding model: {EMBEDDING_MODEL_NAME}...")
-embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+# 1. Init Embedding Model (Google API)
+print(f"Loading Google embedding model: {settings.EMBEDDING_MODEL_NAME}...")
+embeddings = GoogleGenerativeAIEmbeddings(model=settings.EMBEDDING_MODEL_NAME)
 
 # 2. Init Qdrant (Local)
 print("Initializing Qdrant Database...")
