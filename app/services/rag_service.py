@@ -20,37 +20,43 @@ class RAGService:
         
     def initialize(self):
         """Được gọi lúc startup server để load toàn bộ Model vào RAM."""
-        print("1. Initialize Embeddings...")
-        embeddings = HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL_NAME)
-        
-        print("2. Initialize Vector DB...")
-        client = QdrantClient(path=settings.QDRANT_PATH)
-        vector_store = QdrantVectorStore(client=client, collection_name=settings.COLLECTION_NAME, embedding=embeddings)
-        self.vector_retriever = vector_store.as_retriever(search_kwargs={"k": 10})
-        
-        print("3. Initialize BM25 Cache...")
-        with open(settings.BM25_CACHE_PATH, "rb") as f:
-            all_chunks = pickle.load(f)
-        self.bm25_retriever = BM25Retriever.from_documents(all_chunks)
-        self.bm25_retriever.k = 10
-        
-        print("4. Initialize Reranker...")
-        self.ranker = Ranker(model_name=settings.RERANKER_MODEL_NAME)
-        
-        print("5. Initialize Gemini LLM & Chains...")
-        llm = ChatGoogleGenerativeAI(model=settings.LLM_MODEL, temperature=0.2)
-        
-        from common.enums.prompts import REWRITE_QUESTION_PROMPT, SYSTEM_PROMPT_ADVANCED_RAG
-        
-        rewrite_prompt = ChatPromptTemplate.from_messages([
-            ("system", REWRITE_QUESTION_PROMPT),
-            ("human", "Question: {question}")
-        ])
-        self.rewrite_chain = rewrite_prompt | llm | StrOutputParser()
-        
-        prompt = ChatPromptTemplate.from_messages([("system", SYSTEM_PROMPT_ADVANCED_RAG), ("human", "Question: {question}")])
-        self.rag_chain = prompt | llm | StrOutputParser()
-        print("All AI logic loaded successfully!")
+        try:
+            print("1. Initialize Embeddings...")
+            embeddings = HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL_NAME)
+            
+            print("2. Initialize Vector DB...")
+            client = QdrantClient(path=settings.QDRANT_PATH)
+            vector_store = QdrantVectorStore(client=client, collection_name=settings.COLLECTION_NAME, embedding=embeddings)
+            self.vector_retriever = vector_store.as_retriever(search_kwargs={"k": 10})
+            
+            print("3. Initialize BM25 Cache...")
+            with open(settings.BM25_CACHE_PATH, "rb") as f:
+                all_chunks = pickle.load(f)
+            self.bm25_retriever = BM25Retriever.from_documents(all_chunks)
+            self.bm25_retriever.k = 10
+            
+            print("4. Initialize Reranker...")
+            self.ranker = Ranker(model_name=settings.RERANKER_MODEL_NAME)
+            
+            print("5. Initialize Gemini LLM & Chains...")
+            llm = ChatGoogleGenerativeAI(model=settings.LLM_MODEL, temperature=0.2)
+            
+            from common.enums.prompts import REWRITE_QUESTION_PROMPT, SYSTEM_PROMPT_ADVANCED_RAG
+            
+            rewrite_prompt = ChatPromptTemplate.from_messages([
+                ("system", REWRITE_QUESTION_PROMPT),
+                ("human", "Question: {question}")
+            ])
+            self.rewrite_chain = rewrite_prompt | llm | StrOutputParser()
+            
+            prompt = ChatPromptTemplate.from_messages([("system", SYSTEM_PROMPT_ADVANCED_RAG), ("human", "Question: {question}")])
+            self.rag_chain = prompt | llm | StrOutputParser()
+            print("✅ All AI logic loaded successfully!")
+        except Exception as e:
+            print(f"❌ AI INITIALIZATION ERROR: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise e
 
     def rewrite_question(self, question: str) -> str:
         return self.rewrite_chain.invoke({"question": question})
