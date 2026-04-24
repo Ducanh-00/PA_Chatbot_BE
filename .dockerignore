@@ -2,6 +2,7 @@ venv/
 __pycache__/
 *.pyc
 .git/
+.env
 data/
 tests/
 test/
@@ -11,3 +12,4 @@ list_models.py
 batch_ingestion.py
 .DS_Store
 *.egg-info/
+qdrant_db/.lock

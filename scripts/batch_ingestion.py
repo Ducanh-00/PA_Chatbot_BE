@@ -22,6 +22,7 @@ COLLECTION_NAME = "pa_procedures"
 EMBEDDING_MODEL_NAME = "keepitreal/vietnamese-sbert"
 
 # 1. Init Embedding Model (Dense)
+#Load model AI chuyên chuyển text tiếng Việt thành vector 768 chiều
 print(f"Loading dense embedding model: {EMBEDDING_MODEL_NAME}...")
 embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
