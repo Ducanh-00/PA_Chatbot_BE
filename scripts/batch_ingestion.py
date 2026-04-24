@@ -100,37 +100,41 @@ def process_documents():
 
             try:
                 if file.lower().endswith(".pdf"):
-                    # Bước 1: Thử trích xuất text bình thường
-                    md_content = pymupdf4llm.to_markdown(file_path)
-
-                    # Bước 2: Nếu nội dung trống → PDF scan → dùng OCR
-                    clean_text = md_content.strip().replace("\n", "").replace(" ", "")
-                    if len(clean_text) < 50:
-                        print("  ⚠️ PDF scan detected! Switching to OCR (Tesseract)...")
-                        import fitz
-
-                        doc = fitz.open(file_path)
-                        ocr_pages = []
-                        for page_num, page in enumerate(doc):
-                            try:
-                                tp = page.get_textpage_ocr(language="vie+eng", dpi=300)
-                                page_text = page.get_text(textpage=tp)
-                                if page_text.strip():
-                                    ocr_pages.append(
-                                        f"## Page {page_num + 1}\n{page_text}"
-                                    )
-                            except Exception as ocr_err:
-                                print(
-                                    f"    OCR error on page {page_num + 1}: {ocr_err}"
-                                )
-                        doc.close()
-                        md_content = "\n\n".join(ocr_pages)
-                        if md_content.strip():
-                            print(
-                                f"  ✅ OCR extracted {len(ocr_pages)} pages successfully!"
-                            )
-                        else:
-                            print("  ❌ OCR could not extract any text.")
+                    # Kiểm tra xem đã có cache OCR chưa
+                    ocr_cache_path = file_path + ".ocr.txt"
+                    if os.path.exists(ocr_cache_path):
+                        print(f"  ⚡ Found OCR cache. Reading from: {file}.ocr.txt")
+                        with open(ocr_cache_path, "r", encoding="utf-8") as f:
+                            md_content = f.read()
+                    else:
+                        # Bước 1: Thử trích xuất text bình thường
+                        md_content = pymupdf4llm.to_markdown(file_path)
+                        
+                        # Bước 2: Nếu nội dung trống → PDF scan → dùng OCR
+                        clean_text = md_content.strip().replace("\n", "").replace(" ", "")
+                        if len(clean_text) < 50:
+                            print(f"  ⚠️ PDF scan detected! Switching to OCR (Tesseract)...")
+                            import fitz
+                            doc = fitz.open(file_path)
+                            ocr_pages = []
+                            for page_num, page in enumerate(doc):
+                                try:
+                                    tp = page.get_textpage_ocr(language="vie+eng", dpi=300)
+                                    page_text = page.get_text(textpage=tp)
+                                    if page_text.strip():
+                                        ocr_pages.append(f"## Page {page_num + 1}\n{page_text}")
+                                except Exception as ocr_err:
+                                    pass
+                            doc.close()
+                            md_content = "\n\n".join(ocr_pages)
+                            
+                            if md_content.strip():
+                                print(f"  ✅ OCR extracted {len(ocr_pages)} pages. Saving cache...")
+                                # Lưu cache để lần sau không phải OCR lại
+                                with open(ocr_cache_path, "w", encoding="utf-8") as f:
+                                    f.write(md_content)
+                            else:
+                                print(f"  ❌ OCR could not extract any text.")
                 else:
                     # Fallback to standard loader for DOCX
                     loader = Docx2txtLoader(file_path)
