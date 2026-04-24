@@ -17,4 +17,4 @@ class Settings:
 settings = Settings()
 
 if not settings.GOOGLE_API_KEY:
-    raise ValueError("Missing GOOGLE_API_KEY in .env file")
+    print("WARNING: GOOGLE_API_KEY not found. Set it via environment variables.")

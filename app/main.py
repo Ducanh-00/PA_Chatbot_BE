@@ -9,8 +9,12 @@ from app.controllers.chat_controller import router as chat_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("[STARTUP] Starting AI Core system...")
-    rag_service.initialize()
-    print("[STARTUP] Server is ready!")
+    try:
+        rag_service.initialize()
+        print("[STARTUP] Server is ready!")
+    except Exception as e:
+        print(f"[STARTUP] WARNING: AI initialization failed: {e}")
+        print("[STARTUP] Server started WITHOUT AI models. Check env vars.")
     yield
     print("[SHUTDOWN] Cleaning up memory...")
 
