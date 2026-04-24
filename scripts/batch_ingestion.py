@@ -36,7 +36,7 @@ if client.collection_exists(COLLECTION_NAME):
 # Create new collection
 client.create_collection(
     collection_name=COLLECTION_NAME,
-    vectors_config=VectorParams(size=768, distance=Distance.COSINE),
+    vectors_config=VectorParams(size=3072, distance=Distance.COSINE),
 )
 
 vector_store = QdrantVectorStore(

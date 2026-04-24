@@ -8,10 +8,10 @@ class Settings:
     GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
     QDRANT_PATH = "./qdrant_db"
     COLLECTION_NAME = "pa_procedures"
-    EMBEDDING_MODEL_NAME = "embedding-001"
+    EMBEDDING_MODEL_NAME = "models/gemini-embedding-2"
     BM25_CACHE_PATH = "all_chunks.pkl"
     RERANKER_MODEL_NAME = "ms-marco-MiniLM-L-12-v2"
-    LLM_MODEL = "gemini-1.5-flash"
+    LLM_MODEL = "models/gemini-2.0-flash"
 
 
 settings = Settings()
