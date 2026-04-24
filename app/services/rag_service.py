@@ -35,8 +35,9 @@ class RAGService:
             self.bm25_retriever = BM25Retriever.from_documents(all_chunks)
             self.bm25_retriever.k = 10
             
-            print("4. Initialize Reranker...")
-            self.ranker = Ranker(model_name=settings.RERANKER_MODEL_NAME)
+            # print("4. Initialize Reranker...")
+            # self.ranker = Ranker(model_name=settings.RERANKER_MODEL_NAME)
+            self.ranker = None # Disable reranker for RAM saving
             
             print("5. Initialize Gemini LLM & Chains...")
             llm = ChatGoogleGenerativeAI(model=settings.LLM_MODEL, temperature=0.2)
@@ -78,24 +79,28 @@ class RAGService:
                 
         combined_docs = sorted(docs_map.values(), key=lambda x: x["score"], reverse=True)[:10]
         
-        # 3. Rerank
-        passages = []
-        for idx, item in enumerate(combined_docs):
-            doc = item["doc"]
-            passages.append({"id": str(idx), "text": doc.page_content, "meta": doc.metadata})
-            
-        rerankreq = RerankRequest(query=query, passages=passages)
-        reranked_results = self.ranker.rerank(rerankreq)
-        
-        # 4. Format outputs
+        # 3. Reranking (Skip if disabled for RAM)
         final_docs = []
-        for result in reranked_results[:3]:
-            class Doc: pass
-            d = Doc()
-            d.page_content = result["text"]
-            d.metadata = result["meta"]
-            d.metadata["relevance_score"] = result["score"]
-            final_docs.append(d)
+        if self.ranker:
+            passages = []
+            for idx, item in enumerate(combined_docs):
+                doc = item["doc"]
+                passages.append({"id": str(idx), "text": doc.page_content, "meta": doc.metadata})
+                
+            rerankreq = RerankRequest(query=query, passages=passages)
+            reranked_results = self.ranker.rerank(rerankreq)
+            
+            for result in reranked_results[:5]:
+                class Doc: pass
+                d = Doc()
+                d.page_content = result["text"]
+                d.metadata = result["meta"]
+                d.metadata["relevance_score"] = result.get("score", 0)
+                final_docs.append(d)
+        else:
+            # Fallback: Trả về top kết quả từ RRF nếu tắt Reranker
+            final_docs = [item["doc"] for item in combined_docs[:5]]
+            
         return final_docs
 
     def generate_answer(self, query: str, docs: list) -> str:
