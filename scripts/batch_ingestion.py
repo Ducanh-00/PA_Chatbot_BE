@@ -124,12 +124,15 @@ if chunks:
     print(f"\nTotal chunks generated: {len(chunks)}")
     print("Pushing data to Qdrant Vector Database... (This might take a while)")
 
-    # Batch size to avoid RAM overflow
-    batch_size = 100
+    # Batch size to avoid RAM overflow and Rate Limits
+    import time
+    batch_size = 50
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i : i + batch_size]
         vector_store.add_documents(batch)
         print(f"  -> Inserted {i + len(batch)} / {len(chunks)} chunks")
+        # Nghỉ 2 giây để tránh lỗi 429 Resource Exhausted
+        time.sleep(2)
 
     print("Saving all chunks to local file for BM25 Keyword Search...")
     with open(CHUNKS_PATH, "wb") as f:
