@@ -11,7 +11,7 @@ async def chat_endpoint(request: ChatRequest):
         rewritten_query = rag_service.rewrite_question(request.question)
         
         # Bước 2: Tìm kiếm & Rerank tài liệu
-        retrieved_docs = rag_service.hybrid_search_and_rerank(rewritten_query)
+        retrieved_docs = rag_service.search(rewritten_query)
         
         # Bước 3: Tạo câu trả lời
         answer = rag_service.generate_answer(rewritten_query, retrieved_docs)

@@ -9,7 +9,5 @@ langchain-google-genai==4.2.2
 langchain-qdrant==1.1.0
 langchain-text-splitters==1.1.2
 qdrant-client==1.17.1
-rank-bm25==0.2.2
 pymupdf4llm==1.27.2.2
-huggingface_hub==1.11.0
 numpy<2.0.0

@@ -9,8 +9,6 @@ class Settings:
     QDRANT_PATH = "./qdrant_db"
     COLLECTION_NAME = "pa_procedures"
     EMBEDDING_MODEL_NAME = "models/gemini-embedding-2"
-    BM25_CACHE_PATH = "all_chunks.pkl"
-    RERANKER_MODEL_NAME = "ms-marco-MiniLM-L-12-v2"
     LLM_MODEL = "models/gemini-2.0-flash"
 
 
