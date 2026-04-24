@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+data/
+tests/
+test/
+debug_*.py
+test_*.py
+list_models.py
+batch_ingestion.py
+.DS_Store
+*.egg-info/

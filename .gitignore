@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+data/
+debug_*.py
+test_gemini.py
+list_models.py
+*.egg-info/
+*.zip
