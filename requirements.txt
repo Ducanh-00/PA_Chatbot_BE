@@ -14,3 +14,4 @@ FlashRank==0.2.10
 rank-bm25==0.2.2
 pymupdf4llm==1.27.2.2
 huggingface_hub==1.11.0
+sentence-transformers
