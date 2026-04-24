@@ -14,7 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 COPY common/ ./common/
-COPY .env .env
 
 # Copy pre-built data (qdrant_db + BM25 cache)
 COPY qdrant_db/ ./qdrant_db/
@@ -23,9 +22,5 @@ COPY all_chunks.pkl ./all_chunks.pkl
 # Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"
-
-# Start server
+# Start server (Railway overrides this via railway.toml startCommand)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

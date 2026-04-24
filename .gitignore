@@ -2,6 +2,7 @@ venv/
 __pycache__/
 *.pyc
 .DS_Store
+.env
 data/
 debug_*.py
 test_gemini.py
