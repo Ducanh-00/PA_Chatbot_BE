@@ -1,4 +1,5 @@
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_ollama import OllamaEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from langchain_core.prompts import ChatPromptTemplate
@@ -15,8 +16,8 @@ class RAGService:
     def initialize(self):
         """Được gọi lúc startup server để load toàn bộ Model vào RAM."""
         try:
-            print("1. Initialize Embeddings (Google API)...")
-            embeddings = GoogleGenerativeAIEmbeddings(model=settings.EMBEDDING_MODEL_NAME)
+            print("1. Initialize Embeddings (Ollama Local)...")
+            embeddings = OllamaEmbeddings(model="nomic-embed-text")
             
             print("2. Initialize Vector DB...")
             client = QdrantClient(path=settings.QDRANT_PATH)
