@@ -9,3 +9,6 @@ test_gemini.py
 list_models.py
 *.egg-info/
 *.zip
+qdrant_db/
+pdf_data/
+output/

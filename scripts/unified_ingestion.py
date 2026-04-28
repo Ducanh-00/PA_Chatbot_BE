@@ -98,10 +98,10 @@ def process_unified_pdf(file_path, category, file_name):
         drawings = page.get_drawings()
         has_drawings = len(drawings) > 20  # Nếu có >20 nét vẽ thì khả năng cao là lưu đồ
         
-        is_complex = has_large_images or has_tables or has_drawings
+        is_complex = has_large_images or has_drawings
         
         if is_complex:
-            print(f"  -> Page {page_num + 1} is COMPLEX (LargeImg: {has_large_images}, Tables: {has_tables}, Drawings: {has_drawings}). Using LLaVA...")
+            print(f"  -> Page {page_num + 1} is COMPLEX (LargeImg: {has_large_images}, Drawings: {has_drawings}, Tables: {has_tables} - ignored). Using LLaVA...")
             pix = page.get_pixmap(dpi=150)
             img_bytes = pix.tobytes("jpeg")
             base64_img = base64.b64encode(img_bytes).decode('utf-8')
@@ -111,7 +111,7 @@ def process_unified_pdf(file_path, category, file_name):
                     content=[
                         {
                             "type": "text", 
-                            "text": "You are a data extraction expert. Look at this document page. If there is a flowchart, describe its logic step-by-step in extreme detail using Markdown. If there are tables, extract them exactly as Markdown tables. Extract all text clearly. Respond ONLY with the extracted Markdown content."
+                            "text": "You are a data extraction expert. Analyze the flowchart or diagram in the image. 1. Identify all decision nodes (diamonds/conditions). 2. List all process steps. 3. Describe the logical flow from Start to End in Markdown format. If it is a normal image, describe it in detail. Extract any relevant text clearly. Respond ONLY with the extracted Markdown content."
                         },
                         {
                             "type": "image_url",

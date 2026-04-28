@@ -1,6 +1,10 @@
 """Script de xem nhanh noi dung trong Qdrant DB."""
 import os
 import sys
+import io
+
+# Fix Unicode on Windows console
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.core.config import settings
