@@ -2,20 +2,17 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Cài đặt các thư viện hệ thống cần thiết
 RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements và cài đặt dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy toàn bộ mã nguồn
 COPY . .
 
-# Expose port
-EXPOSE 8000
+# Đảm bảo app nằm trong python path
+ENV PYTHONPATH=/app
 
-# Chạy ứng dụng
-CMD ["python", "-m", "app.main"]
+# Chạy trực tiếp uvicorn từ command line để ổn định nhất
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
