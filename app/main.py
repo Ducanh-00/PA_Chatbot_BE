@@ -1,20 +1,38 @@
 import os
+import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+# Thêm đường dẫn gốc của project vào sys.path để có thể chạy python app/main.py trực tiếp
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app.services.rag_service import rag_service
+from app.services.alibaba_rag_service import alibaba_rag_service
 from app.controllers.chat_controller import router as chat_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("[STARTUP] Starting AI Core system...")
+    print("\n" + "="*50)
+    print("[STARTUP] INITIALIZING AI CORES...")
+    print("="*50)
+    
+    # Init Local RAG
+    print("\n--- Initializing Local AI Core ---")
     try:
         rag_service.initialize()
-        print("[STARTUP] Server is ready!")
     except Exception as e:
-        print(f"[STARTUP] WARNING: AI initialization failed: {e}")
-        print("[STARTUP] Server started WITHOUT AI models. Check env vars.")
+        print(f"Local AI Init failed: {e}")
+
+    # Init Alibaba RAG
+    print("\n--- Initializing Alibaba AI Core ---")
+    try:
+        alibaba_rag_service.initialize()
+    except Exception as e:
+        print(f"Alibaba AI Init failed: {e}")
+    
+    print("\n[STARTUP] SUCCESS: All AI Cores are ready!")
+    print("="*50 + "\n")
     yield
     print("[SHUTDOWN] Cleaning up memory...")
 

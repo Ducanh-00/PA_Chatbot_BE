@@ -13,6 +13,7 @@ from qdrant_client.http.models import Distance, VectorParams
 from langchain_core.documents import Document
 import uuid
 import hashlib
+import docx2txt
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.core.config import settings
@@ -153,6 +154,28 @@ def process_unified_pdf(file_path, category, file_name):
     doc.close()
     return all_chunks
 
+def process_docx(file_path, category, file_name):
+    print(f"\n[DOCX MODE] Processing: {file_name}")
+    try:
+        text = docx2txt.process(file_path)
+        if not text or not text.strip():
+            return []
+        
+        # Tạo Document object tương thích với LangChain
+        doc = Document(page_content=text, metadata={
+            "source_file": file_name,
+            "category": category,
+            "page": 1, # Word không phân trang rõ như PDF, mặc định là 1
+            "extracted_by": "docx2txt"
+        })
+        
+        # Chia nhỏ
+        chunks = text_splitter.split_documents([doc])
+        return chunks
+    except Exception as e:
+        print(f"  ❌ Error reading DOCX: {e}")
+        return []
+
 def load_processed_files():
     if not os.path.exists(PROCESSED_LOG_PATH):
         return set()
@@ -172,16 +195,16 @@ if __name__ == "__main__":
     if processed_files_set:
         print(f"Loaded {len(processed_files_set)} already processed files. They will be skipped.")
 
-    pdf_files = []
+    data_files = []
     for root, dirs, files in os.walk(DATA_DIR):
         for f in files:
-            if f.lower().endswith(".pdf") and not f.startswith("."):
-                pdf_files.append(os.path.join(root, f))
+            if (f.lower().endswith(".pdf") or f.lower().endswith(".docx")) and not f.startswith("."):
+                data_files.append(os.path.join(root, f))
                 
-    if not pdf_files:
-        print(f"No PDF files found in {DATA_DIR}/ to process.")
+    if not data_files:
+        print(f"No PDF or DOCX files found in {DATA_DIR}/ to process.")
     else:
-        for file_path in pdf_files:
+        for file_path in data_files:
             if file_path in processed_files_set:
                 print(f"⏭️  Skipping already processed file: {os.path.basename(file_path)}")
                 continue
@@ -190,7 +213,10 @@ if __name__ == "__main__":
             if category == '.':
                 category = 'uncategorized'
                 
-            chunks = process_unified_pdf(file_path, category, os.path.basename(file_path))
+            if file_path.lower().endswith(".pdf"):
+                chunks = process_unified_pdf(file_path, category, os.path.basename(file_path))
+            else:
+                chunks = process_docx(file_path, category, os.path.basename(file_path))
             if chunks:
                 print(f"  Total chunks extracted for {os.path.basename(file_path)}: {len(chunks)}")
                 # Chia nho thanh batch 50 chunks de tranh Rate Limit

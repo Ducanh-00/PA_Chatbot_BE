@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: pa-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      # Mount thư mục qdrant_db hiện tại vào container để không mất dữ liệu
+      - ./qdrant_db:/qdrant/storage
+    restart: always
+
+  api:
+    build: .
+    container_name: pa-chatbot-api
+    ports:
+      - "8000:8000"
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    depends_on:
+      - qdrant
+    restart: always

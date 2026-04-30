@@ -64,7 +64,6 @@ D:\Ducanh\Work\PA_Chatbot_BE\data\vat_tu\04. Quy trinh quan ly vat tu\34 HDQT Qu
 D:\Ducanh\Work\PA_Chatbot_BE\data\vat_tu\04. Quy trinh quan ly vat tu\QD 171100920181630437521ID627.pdf
 D:\Ducanh\Work\PA_Chatbot_BE\data\vat_tu\04. Quy trinh quan ly vat tu\QT.TCKT.01 - QT QL VAT TU.pdf
 D:\Ducanh\Work\PA_Chatbot_BE\data\vat_tu\04. Quy trinh quan ly vat tu\QT.TCKT.01 - QT QL VAT TU_2.pdf
-D:\Ducanh\Work\PA_Chatbot_BE\data\an_toan\01. Quy trinh an toan\01. XD Pham vi HT QL ATTT.docx
 D:\Ducanh\Work\PA_Chatbot_BE\data\an_toan\01. Quy trinh an toan\02. Chinh sach ATTT PA.docx
 D:\Ducanh\Work\PA_Chatbot_BE\data\an_toan\01. Quy trinh an toan\03. Muc tieu ATTT.docx
 D:\Ducanh\Work\PA_Chatbot_BE\data\an_toan\01. Quy trinh an toan\03.01 QT.CNTT.02 Mau Quy trinh Xac dinh muc tieu ATTT MT01.docx
@@ -141,3 +140,4 @@ D:\Ducanh\Work\PA_Chatbot_BE\data\van_phong\05. Quy trinh van phong\PLQTVP010126
 D:\Ducanh\Work\PA_Chatbot_BE\data\van_phong\05. Quy trinh van phong\PLQTVP0102260620231345541553.docx
 D:\Ducanh\Work\PA_Chatbot_BE\data\van_phong\05. Quy trinh van phong\QTVP01260620231345541552.docx
 D:\Ducanh\Work\PA_Chatbot_BE\data\van_phong\05. Quy trinh van phong\Quyet dinh ban hanh lai QT.VP.01.1 (ver 2)11.docx
+D:\Ducanh\Work\PA_Chatbot_BE\data\an_toan\01. Quy trinh an toan\01. XD Pham vi HT QL ATTT.docx

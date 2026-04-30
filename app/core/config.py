@@ -3,16 +3,24 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 class Settings:
     GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
-    QDRANT_PATH = "./qdrant_db"
+    
+    # Qdrant Config (Hỗ trợ cả Local và Cloud)
+    QDRANT_URL = os.environ.get("QDRANT_URL") # Ưu tiên dùng URL (cho Cloud)
+    QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY") # Cần thiết cho Cloud
+    
+    QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")
+    QDRANT_PORT = os.environ.get("QDRANT_PORT", 6333)
+    QDRANT_PATH = os.environ.get("QDRANT_PATH", "./qdrant_db") # Dùng cho local mode nếu không có URL/Host
+    
     COLLECTION_NAME = "pa_procedures"
-    EMBEDDING_MODEL_NAME = "models/gemini-embedding-2"
-    LLM_MODEL = "models/gemini-2.0-flash"
-
+    DASHSCOPE_API_KEY = os.environ.get("DASHSCOPE_API_KEY")
+    
+    # Alibaba Cloud Models
+    ALIBABA_EMBEDDING_MODEL = "text-embedding-v3"
+    ALIBABA_VISION_MODEL = "qwen-vl-max"
+    ALIBABA_CHAT_MODEL = "qwen-max"
+    ALIBABA_COLLECTION_NAME = "pa_procedures_alibaba"
 
 settings = Settings()
-
-if not settings.GOOGLE_API_KEY:
-    print("WARNING: GOOGLE_API_KEY not found. Set it via environment variables.")

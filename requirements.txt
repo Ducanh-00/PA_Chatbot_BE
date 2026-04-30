@@ -13,3 +13,8 @@ pymupdf4llm==1.27.2.2
 numpy
 python-docx
 docx2txt
+dashscope
+portalocker
+langchain-ollama
+langchain-alibaba
+rank_bm25

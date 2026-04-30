@@ -70,7 +70,14 @@ def process_docx(file_path, category, file_name):
         full_text = []
         for para in doc.paragraphs:
             if para.text.strip():
-                full_text.append(para.text)
+                full_text.append(para.text) 
+        
+        # Extract text from tables
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    if cell.text.strip():
+                        full_text.append(cell.text)
         
         md_content = "\n\n".join(full_text)
         all_chunks = []

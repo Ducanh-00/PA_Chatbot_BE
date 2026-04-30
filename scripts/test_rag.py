@@ -8,10 +8,15 @@ from langchain_qdrant import QdrantVectorStore
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-from qdrant_client.http import models
+from langchain_community.retrievers import BM25Retriever
+from langchain_core.documents import Document
 
-# Fix Unicode cho terminal Windows
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+# Fix Unicode cho terminal Windows một cách an toàn (tránh lỗi đè chữ)
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 
 # Config
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,107 +24,7 @@ QDRANT_PATH = os.path.join(BASE_DIR, "qdrant_db")
 COLLECTION_NAME = "pa_procedures"
 
 
-# ==============================================================================
-# PHẦN 1: TRÍCH XUẤT KEYWORD TỪ CÂU HỎI
-# ==============================================================================
-
-def extract_file_reference(query):
-    """Trích xuất tham chiếu file/tài liệu từ câu hỏi (nếu có).
-    
-    Chỉ kích hoạt khi người dùng RÕ RÀNG nhắc đến tên file/tài liệu.
-    Trả về list keyword để filter, hoặc [] nếu không tìm thấy.
-    """
-    keywords = []
-    
-    # Pattern: Người dùng nhắc rõ "file/tài liệu + tên"
-    # Ví dụ: "file 01. XD Pham vi", "tài liệu QT.AT.01", "quy trình CNTT.01"
-    doc_words = r'(?:file|tài liệu|tl|document|văn bản|quy trình|quy định)'
-    # Các từ báo hiệu kết thúc tên file, bắt đầu phần câu hỏi
-    stop_words = (
-        r'(?:,|\?|thì\b|là gì|là\b|có\b|nói\b|đề cập|quy định\b|mục đích|nội dung'
-        r'|phạm vi|gồm|bao gồm|ghi\b|viết\b|trình bày|hướng dẫn|cho biết'
-        r'|như thế nào|ra sao|ở đâu|bao nhiêu|khi nào|tại sao|để làm gì)'
-    )
-    
-    file_ref_patterns = [
-        # "nội dung của file/tài liệu + tên" (đặt trước vì cụ thể hơn)
-        rf'(?:nội dung|nd)\s+(?:của\s+)?{doc_words}\s+["\']?(.+?)["\']?\s*{stop_words}',
-        rf'(?:nội dung|nd)\s+(?:của\s+)?{doc_words}\s+["\']?(.+?)["\']?\s*$',
-        # "trong file X, ..." hoặc "file X là gì"
-        rf'(?:trong\s+)?{doc_words}\s+["\']?(.+?)["\']?\s*{stop_words}',
-        # "file X" ở cuối câu
-        rf'(?:trong\s+)?{doc_words}\s+["\']?(.+?)["\']?\s*(?:\?|$)',
-    ]
-    
-    # Danh sách các từ phổ biến không nên coi là tên file
-    common_verbs = {'xác định', 'tìm', 'xem', 'hỏi', 'cho', 'biết', 'lấy', 'đọc'}
-    
-    for pattern in file_ref_patterns:
-        match = re.search(pattern, query, re.IGNORECASE)
-        if match:
-            file_ref = match.group(1).strip().rstrip(',. ?')
-            # Dọn dẹp: loại bỏ các từ hỏi bị dính ở cuối
-            file_ref = re.sub(r'\s+(?:là gì\??|có gì|nói gì|gồm gì|gồm những gì)\s*$', '', file_ref, flags=re.IGNORECASE)
-            
-            # Kiểm tra nếu file_ref không phải là động từ phổ biến và đủ dài
-            if len(file_ref) >= 3 and file_ref.lower() not in common_verbs:
-                keywords.append(file_ref)
-                # Nếu tên dài, tách thêm các phần có nghĩa
-                # "01. XD Pham vi HT QL ATTT" -> thêm "XD Pham vi", "ATTT"
-                parts = re.split(r'[\d]+[.\s]+', file_ref, maxsplit=1)
-                if len(parts) > 1 and len(parts[1].strip()) >= 3:
-                    keywords.append(parts[1].strip())
-            break
-    
-    # Pattern: Mã tài liệu chuyên biệt (QT.XX.01, QD.XX.01, BM.XX, etc.)
-    code_match = re.findall(r'((?:QT|QD|QĐ|BM|ISMS|SMS)[.\s-][A-Za-z]+[.\s-]?\d*)', query, re.IGNORECASE)
-    keywords.extend(code_match)
-    
-    # Deduplicate
-    seen = set()
-    unique = []
-    for kw in keywords:
-        kw_lower = kw.lower()
-        if kw_lower not in seen and len(kw) >= 3:
-            seen.add(kw_lower)
-            unique.append(kw)
-    
-    return unique
-
-
-# ==============================================================================
-# PHẦN 2: TÌM KIẾM THÔNG MINH
-# ==============================================================================
-
-def search_by_file_filter(vector_store, query, keywords, k=10):
-    """Tìm kiếm semantic nhưng filter theo tên file/category.
-    
-    Dùng should (OR) để match cả source_file VÀ category.
-    """
-    all_filtered = []
-    
-    for kw in keywords:
-        try:
-            file_filter = models.Filter(
-                should=[
-                    models.FieldCondition(
-                        key="metadata.source_file",
-                        match=models.MatchText(text=kw)
-                    ),
-                    models.FieldCondition(
-                        key="metadata.category",
-                        match=models.MatchText(text=kw)
-                    ),
-                ]
-            )
-            docs = vector_store.as_retriever(
-                search_kwargs={"k": k, "filter": file_filter}
-            ).invoke(query)
-            all_filtered.extend(docs)
-        except Exception:
-            pass
-    
-    return all_filtered
+# Đã xóa phần Regex Keyword Extraction cũ vì thay thế bằng BM25 (Hybrid Search)
 
 
 def deduplicate_docs(docs):
@@ -135,6 +40,26 @@ def deduplicate_docs(docs):
             unique.append(doc)
     return unique
 
+def reciprocal_rank_fusion(results_lists, k=60):
+    """
+    Thuật toán Reciprocal Rank Fusion (RRF) để gộp kết quả từ nhiều bộ tìm kiếm.
+    Càng đứng top cao ở các bộ tìm kiếm, điểm RRF càng lớn.
+    """
+    fused_scores = {}
+    for docs in results_lists:
+        for rank, doc in enumerate(docs):
+            doc_hash = doc.page_content
+            if doc_hash not in fused_scores:
+                fused_scores[doc_hash] = {"doc": doc, "score": 0.0}
+            fused_scores[doc_hash]["score"] += 1.0 / (rank + 1 + k)
+    
+    # Sắp xếp theo score giảm dần
+    reranked_results = [
+        item["doc"]
+        for item in sorted(fused_scores.values(), key=lambda x: x["score"], reverse=True)
+    ]
+    return reranked_results
+
 
 # ==============================================================================
 # PHẦN 3: MAIN
@@ -148,13 +73,42 @@ def main():
         client = QdrantClient(path=QDRANT_PATH)
         vector_store = QdrantVectorStore(client=client, collection_name=COLLECTION_NAME, embedding=embeddings)
         print(f"   ✅ Database loaded: {client.get_collection(COLLECTION_NAME).points_count} chunks.")
+        
+        # --- KHỞI TẠO HYBRID SEARCH (Ensemble Retriever) ---
+        print("   ⏳ Đang khởi tạo bộ máy tìm kiếm BM25 (có thể mất vài giây để tải DB vào RAM)...")
+        # Kéo toàn bộ văn bản từ Qdrant về để lập index BM25
+        records, _ = client.scroll(
+            collection_name=COLLECTION_NAME,
+            limit=50000,
+            with_payload=True,
+            with_vectors=False
+        )
+        
+        docs_for_bm25 = []
+        for r in records:
+            content = r.payload.get("page_content", "")
+            if content:
+                docs_for_bm25.append(Document(
+                    page_content=content,
+                    metadata=r.payload.get("metadata", {})
+                ))
+                
+        bm25_retriever = BM25Retriever.from_documents(docs_for_bm25)
+        bm25_retriever.k = 15 # Lấy 15 kết quả tốt nhất từ BM25
+        
+        vector_retriever = vector_store.as_retriever(search_kwargs={"k": 15})
+        # KHÔNG DÙNG EnsembleRetriever của Langchain nữa vì phiên bản Langchain hiện tại bị thiếu module.
+        # Chúng ta sẽ tự code thuật toán RRF (Reciprocal Rank Fusion) ở dưới.
+        print("   ✅ Đã khởi tạo xong Hybrid Search (BM25 + Vector).")
+        
     except Exception as e:
         print(f"   ❌ Lỗi DB: {e}")
         return
     
     try:
-        llm = ChatOllama(model="llama3", temperature=0)
-        print("   ✅ LLM ready.")
+        # Tăng nhẹ temperature và thêm repeat_penalty để tránh vòng lặp (hallucination loop)
+        llm = ChatOllama(model="qwen2.5", temperature=0.1, top_p=0.9, repeat_penalty=1.1)
+        print("   ✅ LLM (Qwen 2.5) ready.")
     except Exception as e:
         print(f"   ❌ Lỗi LLM: {e}")
         return
@@ -167,28 +121,20 @@ def main():
             if not query.strip():
                 continue
                 
-            print("🔍 Đang tìm kiếm...")
+            print("🔍 Đang tìm kiếm bằng Hybrid Search (BM25 + Vector)...")
 
-            # ─── BƯỚC 1: Semantic Search (Tăng k để lấy nhiều dữ liệu hơn) ───
-            semantic_docs = vector_store.as_retriever(
-                search_kwargs={"k": 30}
-            ).invoke(query)
-            print(f"   📚 Semantic search: {len(semantic_docs)} kết quả")
+            # Lấy kết quả từ BM25 (tìm từ khóa)
+            bm25_docs = bm25_retriever.invoke(query)
+            # Lấy kết quả từ Vector (tìm ngữ nghĩa)
+            vector_docs = vector_retriever.invoke(query)
+            
+            # Gộp điểm bằng RRF
+            all_docs = reciprocal_rank_fusion([bm25_docs, vector_docs])
+            
+            # Lọc các đoạn trùng lặp nội dung, giữ lại tối đa 15 đoạn cho AI
+            docs = deduplicate_docs(all_docs)[:15]
+            print(f"   📚 Đã tìm thấy {len(docs)} đoạn văn bản phù hợp nhất.")
 
-            # ─── BƯỚC 2: File Filter Search (CHỈ KHI người dùng nhắc đến file) ───
-            file_keywords = extract_file_reference(query)
-            filtered_docs = []
-            if file_keywords:
-                print(f"   🎯 Phát hiện tham chiếu tài liệu: {file_keywords}")
-                filtered_docs = search_by_file_filter(
-                    vector_store, query, file_keywords, k=20
-                )
-                print(f"   📁 File filter: {len(filtered_docs)} kết quả")
-
-            # ─── BƯỚC 3: Merge & Deduplicate ───
-            # Lấy nhiều kết quả rồi lọc trùng, sau đó giữ lại tối đa 20 đoạn để LLM đọc
-            all_docs = filtered_docs + semantic_docs
-            docs = deduplicate_docs(all_docs)[:20]
             
             if not docs:
                 print("   ⚠️ Không tìm thấy kết quả phù hợp.")
@@ -203,7 +149,7 @@ NGUYÊN TẮC BẮT BUỘC:
 3. Trích dẫn nguyên văn từ tài liệu khi có thể, ghi rõ tên file nguồn.
 4. Nếu ngữ cảnh không chứa đủ thông tin, hãy trả lời: "Tôi không tìm thấy thông tin này trong các tài liệu được cung cấp."
 5. Trình bày có cấu trúc: dùng gạch đầu dòng, đánh số, in đậm khi cần thiết.
-6. KHÔNG ĐƯỢC tóm tắt quá ngắn gọn. Hãy trình bày cực kỳ CHI TIẾT và ĐẦY ĐỦ nhất mọi thông tin tìm thấy trong ngữ cảnh.
+6. Trình bày thông tin đầy đủ, chi tiết nhưng TRÁNH việc lặp đi lặp lại cùng một nội dung nhiều lần.
 
 Ngữ cảnh từ tài liệu:
 {context}
