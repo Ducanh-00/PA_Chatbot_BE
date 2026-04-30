@@ -13,5 +13,5 @@ COPY . .
 
 ENV PYTHONPATH=/app
 
-# Dùng exec form và gọi qua python module để đảm bảo tìm thấy uvicorn và chạy đúng cổng 8080
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Chuyển sang cổng 8000 (standard)
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

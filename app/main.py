@@ -1,6 +1,8 @@
 import os
+import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from contextlib import asynccontextmanager
 
 # Import controllers
@@ -8,10 +10,8 @@ from app.controllers import chat_controller
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Không làm gì nặng nề ở đây
     print("--- SERVER STARTING ---")
     yield
-    # Shutdown
     print("--- SERVER SHUTTING DOWN ---")
 
 app = FastAPI(
@@ -19,7 +19,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS cực kỳ quan trọng cho demo
+# Chấp nhận mọi host từ Railway
+app.add_middleware(
+    TrustedHostMiddleware, 
+    allowed_hosts=["*"]
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,7 +33,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Thêm router
 app.include_router(chat_controller.router)
 
 @app.get("/")
@@ -36,5 +40,11 @@ async def root():
     return {
         "status": "online",
         "message": "PA Chatbot Backend is running",
-        "endpoints": ["/docs", "/api/v1/chat"]
+        "docs": "/docs"
     }
+
+if __name__ == "__main__":
+    # Fallback cho chạy local
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
