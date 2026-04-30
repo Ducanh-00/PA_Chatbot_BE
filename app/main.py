@@ -1,43 +1,36 @@
 import os
-import sys
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-
-# Thêm đường dẫn gốc của project vào sys.path để có thể chạy python app/main.py trực tiếp
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+from app.api.endpoints import chat, procedures
 from app.services.rag_service import rag_service
-from app.services.alibaba_rag_service import alibaba_rag_service
-from app.controllers.chat_controller import router as chat_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("\n" + "="*50)
-    print("[STARTUP] INITIALIZING AI CORES...")
-    print("="*50)
-    
-    # Init Local RAG
-    print("\n--- Initializing Local AI Core ---")
+    # Startup logic
+    print("=" * 50)
+    print("[STARTUP] INITIALIZING ALIBABA CLOUD RAG SYSTEM...")
+    print("=" * 50)
     try:
+        # Chỉ khởi tạo một core duy nhất dùng Alibaba Cloud
         rag_service.initialize()
+        print("[STARTUP] SUCCESS: RAG System is ready for production!")
     except Exception as e:
-        print(f"Local AI Init failed: {e}")
-
-    # Init Alibaba RAG
-    print("\n--- Initializing Alibaba AI Core ---")
-    try:
-        alibaba_rag_service.initialize()
-    except Exception as e:
-        print(f"Alibaba AI Init failed: {e}")
-    
-    print("\n[STARTUP] SUCCESS: All AI Cores are ready!")
-    print("="*50 + "\n")
+        print(f"[STARTUP] ERROR during initialization: {e}")
+    print("=" * 50)
     yield
-    print("[SHUTDOWN] Cleaning up memory...")
+    # Shutdown logic
+    print("[SHUTDOWN] Cleaning up resources...")
 
-app = FastAPI(title="PA Chatbot Enterprise API", lifespan=lifespan)
+app = FastAPI(
+    title="PA Chatbot API (Alibaba Cloud)",
+    description="Backend API for PA Chatbot using Alibaba DashScope and Qdrant Cloud",
+    version="2.0.0",
+    lifespan=lifespan
+)
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -46,14 +39,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat_router)
+# Routes
+app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
+app.include_router(procedures.router, prefix="/api/v1", tags=["Procedures"])
 
 @app.get("/")
 async def root():
-    return {"status": "ok", "service": "PA Chatbot API"}
+    return {
+        "status": "online",
+        "service": "PA Chatbot Backend",
+        "engine": "Alibaba DashScope (Qwen-Max)",
+        "database": "Qdrant Cloud"
+    }
 
 if __name__ == "__main__":
-    import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
-
+    # Production không nên dùng reload=True, nhưng để demo có thể để tạm
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=False)
