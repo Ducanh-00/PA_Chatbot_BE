@@ -11,8 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Đảm bảo app nằm trong python path
 ENV PYTHONPATH=/app
 
-# Sử dụng shell form để biến $PORT được thực thi đúng
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT
+# Dùng exec form và gọi qua python module để đảm bảo tìm thấy uvicorn và chạy đúng cổng 8080
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
