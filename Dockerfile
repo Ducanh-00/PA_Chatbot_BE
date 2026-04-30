@@ -14,5 +14,5 @@ COPY . .
 # Đảm bảo app nằm trong python path
 ENV PYTHONPATH=/app
 
-# Chạy trực tiếp uvicorn từ command line để ổn định nhất
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Sử dụng shell form để biến $PORT được thực thi đúng
+CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT
