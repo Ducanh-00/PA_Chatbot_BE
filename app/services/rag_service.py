@@ -12,8 +12,17 @@ class RAGService:
     def _initialize(self):
         """Lazy initialization of AI components"""
         if self.llm is None:
-            # Sửa tên Class đúng của langchain-alibaba
-            from langchain_alibaba import ChatDashScope
+            try:
+                # Cách import an toàn nhất của LangChain
+                from langchain_alibaba import ChatDashScope
+            except ImportError:
+                try:
+                    # Thử tên thay thế nếu bản cũ
+                    from langchain_alibaba import DashScopeChatModels as ChatDashScope
+                except ImportError:
+                    # Nếu vẫn lỗi, dùng bộ khởi tạo linh hoạt
+                    from langchain_alibaba.chat_models import ChatDashScope
+            
             from langchain_community.embeddings import DashScopeEmbeddings
             from langchain_qdrant import QdrantVectorStore
             
@@ -34,11 +43,9 @@ class RAGService:
     def query(self, question: str):
         self._initialize()
         
-        # 1. Tìm kiếm tài liệu liên quan
         docs = self.vector_store.similarity_search(question, k=4)
         context = "\n\n".join([doc.page_content for doc in docs])
         
-        # 2. System Prompt "Đẹp" và chuyên nghiệp
         system_prompt = """Bạn là Petrolimex AI - Chuyên gia hỗ trợ kỹ thuật hàng không chuyên nghiệp.
 Nhiệm vụ của bạn là trả lời câu hỏi dựa trên ngữ cảnh được cung cấp.
 
@@ -47,9 +54,7 @@ QUY TẮC ĐỊNH DẠNG CÂU TRẢ LỜI:
 2. Nhấn mạnh: Sử dụng **in đậm** cho các thông số kỹ thuật hoặc các lưu ý quan trọng.
 3. Danh sách: Sử dụng bullet points rõ ràng.
 4. Chuyên nghiệp: Sử dụng các icon phù hợp như ⛽, ✈️, 📋, ⚠️.
-5. Ngôn ngữ: Trả lời lịch sự, chính xác, ngắn gọn nhưng đầy đủ.
-
-Nếu thông tin không có trong ngữ cảnh, hãy lịch sự thông báo và trả lời dựa trên kiến thức chuyên môn của bạn nhưng phải có ghi chú rõ ràng."""
+5. Ngôn ngữ: Trả lời lịch sự, chính xác, ngắn gọn nhưng đầy đủ."""
 
         user_prompt = f"Ngữ cảnh:\n{context}\n\nCâu hỏi: {question}"
         
