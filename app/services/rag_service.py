@@ -12,24 +12,25 @@ class RAGService:
     def _initialize(self):
         """Lazy initialization of AI components"""
         if self.llm is None:
-            # Thiết lập API Key toàn cục cho thư viện dashscope
+            # QUAN TRỌNG: Thiết lập URL cho tài khoản Quốc tế
             dashscope.api_key = settings.DASHSCOPE_API_KEY
+            dashscope.base_http_api_url = 'https://dashscope-intl.aliyuncs.com/api/v1'
             
             from langchain_community.chat_models.tongyi import ChatTongyi
             from langchain_community.embeddings import DashScopeEmbeddings
             from langchain_qdrant import QdrantVectorStore
             
-            # Khởi tạo LLM với cả 2 cách đặt tên tham số để đảm bảo tương thích
+            # Khởi tạo LLM (Dùng 'model' thay cho 'model_name' để ổn định)
             self.llm = ChatTongyi(
-                model_name=settings.ALIBABA_CHAT_MODEL,
+                model=settings.ALIBABA_CHAT_MODEL,
                 dashscope_api_key=settings.DASHSCOPE_API_KEY,
-                api_key=settings.DASHSCOPE_API_KEY # Thêm phương án dự phòng
+                temperature=0.1
             )
             
             # Khởi tạo Embeddings
             self.embeddings = DashScopeEmbeddings(
                 model=settings.ALIBABA_EMBEDDING_MODEL,
-                dashscope_api_key=settings.DASHSCOPE_API_KEY,
+                dashscope_api_key=settings.DASHSCOPE_API_KEY
             )
             
             # Khởi tạo Vector Store
@@ -48,14 +49,16 @@ class RAGService:
         docs = self.vector_store.similarity_search(question, k=4)
         context = "\n\n".join([doc.page_content for doc in docs])
         
-        system_prompt = """Bạn là Petrolimex AI - Chuyên gia hỗ trợ kỹ thuật hàng không.
-Trả lời dựa trên ngữ cảnh được cung cấp.
+        # System Prompt để format câu trả lời đẹp
+        system_prompt = """Bạn là Petrolimex AI - Chuyên gia hỗ trợ kỹ thuật hàng không chuyên nghiệp.
+Nhiệm vụ của bạn là trả lời câu hỏi dựa trên ngữ cảnh được cung cấp.
 
-QUY TẮC ĐỊNH DẠNG:
-1. Tiêu đề: Dùng ###.
-2. In đậm: Dùng ** cho thông số kỹ thuật.
-3. Danh sách: Dùng bullet points.
-4. Emojis: Dùng ⛽, ✈️, 📋."""
+QUY TẮC ĐỊNH DẠNG CÂU TRẢ LỜI:
+1. Cấu trúc rõ ràng: Sử dụng tiêu đề (###) cho các phần lớn.
+2. Nhấn mạnh: Sử dụng **in đậm** cho các từ khóa hoặc lưu ý quan trọng.
+3. Danh sách: Sử dụng bullet points rõ ràng.
+4. Trực quan: Sử dụng các icon phù hợp như ⛽, ✈️, 📋, ⚠️.
+5. Ngôn ngữ: Trả lời lịch sự, chính xác, ngắn gọn nhưng đầy đủ."""
 
         user_prompt = f"Ngữ cảnh:\n{context}\n\nCâu hỏi: {question}"
         
