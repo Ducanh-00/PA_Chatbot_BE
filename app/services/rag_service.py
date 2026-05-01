@@ -22,23 +22,22 @@ class RAGService:
                 dashscope_api_key=settings.DASHSCOPE_API_KEY,
             )
             
-            # Sửa tham số model_name thành model
+            # Khởi tạo Embeddings
             self.embeddings = DashScopeEmbeddings(
                 model=settings.ALIBABA_EMBEDDING_MODEL,
                 dashscope_api_key=settings.DASHSCOPE_API_KEY,
             )
             
-            # Khởi tạo Vector Store
+            # Sử dụng đúng biến ALIBABA_COLLECTION_NAME
             self.vector_store = QdrantVectorStore(
                 client=qdrant_manager.get_client(),
-                collection_name=settings.QDRANT_COLLECTION,
+                collection_name=settings.ALIBABA_COLLECTION_NAME,
                 embedding=self.embeddings,
             )
 
     def query(self, question: str):
         self._initialize()
         
-        # Kiểm tra an toàn trước khi search
         if not self.vector_store:
             raise Exception("Vector store failed to initialize")
             
