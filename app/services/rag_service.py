@@ -12,21 +12,12 @@ class RAGService:
     def _initialize(self):
         """Lazy initialization of AI components"""
         if self.llm is None:
-            try:
-                # Cách import an toàn nhất của LangChain
-                from langchain_alibaba import ChatDashScope
-            except ImportError:
-                try:
-                    # Thử tên thay thế nếu bản cũ
-                    from langchain_alibaba import DashScopeChatModels as ChatDashScope
-                except ImportError:
-                    # Nếu vẫn lỗi, dùng bộ khởi tạo linh hoạt
-                    from langchain_alibaba.chat_models import ChatDashScope
-            
+            # Sử dụng bộ Chat từ langchain_community - cực kỳ ổn định
+            from langchain_community.chat_models.tongyi import ChatTongyi
             from langchain_community.embeddings import DashScopeEmbeddings
             from langchain_qdrant import QdrantVectorStore
             
-            self.llm = ChatDashScope(
+            self.llm = ChatTongyi(
                 model_name=settings.ALIBABA_CHAT_MODEL,
                 dashscope_api_key=settings.DASHSCOPE_API_KEY,
             )
@@ -43,18 +34,18 @@ class RAGService:
     def query(self, question: str):
         self._initialize()
         
+        # Tìm kiếm tài liệu
         docs = self.vector_store.similarity_search(question, k=4)
         context = "\n\n".join([doc.page_content for doc in docs])
         
-        system_prompt = """Bạn là Petrolimex AI - Chuyên gia hỗ trợ kỹ thuật hàng không chuyên nghiệp.
-Nhiệm vụ của bạn là trả lời câu hỏi dựa trên ngữ cảnh được cung cấp.
+        system_prompt = """Bạn là Petrolimex AI - Chuyên gia hỗ trợ kỹ thuật hàng không.
+Trả lời dựa trên ngữ cảnh được cung cấp.
 
-QUY TẮC ĐỊNH DẠNG CÂU TRẢ LỜI:
-1. Cấu trúc rõ ràng: Sử dụng tiêu đề (###) cho các phần lớn.
-2. Nhấn mạnh: Sử dụng **in đậm** cho các thông số kỹ thuật hoặc các lưu ý quan trọng.
-3. Danh sách: Sử dụng bullet points rõ ràng.
-4. Chuyên nghiệp: Sử dụng các icon phù hợp như ⛽, ✈️, 📋, ⚠️.
-5. Ngôn ngữ: Trả lời lịch sự, chính xác, ngắn gọn nhưng đầy đủ."""
+QUY TẮC ĐỊNH DẠNG:
+1. Tiêu đề: Dùng ###.
+2. In đậm: Dùng ** cho thông số kỹ thuật.
+3. Danh sách: Dùng bullet points.
+4. Emojis: Dùng ⛽, ✈️, 📋."""
 
         user_prompt = f"Ngữ cảnh:\n{context}\n\nCâu hỏi: {question}"
         
@@ -63,6 +54,7 @@ QUY TẮC ĐỊNH DẠNG CÂU TRẢ LỜI:
             {"role": "user", "content": user_prompt}
         ]
         
+        # ChatTongyi sử dụng phương thức invoke tương tự
         response = self.llm.invoke(messages)
         
         return {
