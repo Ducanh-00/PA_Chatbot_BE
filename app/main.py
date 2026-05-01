@@ -2,11 +2,10 @@ import os
 import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from contextlib import asynccontextmanager
 
-# Import controllers
-from app.controllers import chat_controller
+# Đảm bảo thư mục app có trong path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,12 +18,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Chấp nhận mọi host từ Railway
-app.add_middleware(
-    TrustedHostMiddleware, 
-    allowed_hosts=["*"]
-)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,18 +26,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat_controller.router)
+# Import router bên trong để tránh lỗi vòng lặp import hoặc crash sớm
+try:
+    from app.controllers import chat_controller
+    app.include_router(chat_controller.router)
+except Exception as e:
+    print(f"FAILED TO LOAD ROUTER: {e}")
 
 @app.get("/")
 async def root():
-    return {
-        "status": "online",
-        "message": "PA Chatbot Backend is running",
-        "docs": "/docs"
-    }
+    return {"status": "online", "port": os.environ.get("PORT", "8000")}
 
-if __name__ == "__main__":
-    # Fallback cho chạy local
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+# Không dùng uvicorn.run ở đây nữa để Railway chạy qua CMD Dockerfile cho chuẩn
