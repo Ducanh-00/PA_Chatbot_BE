@@ -20,7 +20,7 @@ class Settings:
     # Alibaba Cloud Models
     ALIBABA_EMBEDDING_MODEL = "text-embedding-v3"
     ALIBABA_VISION_MODEL = "qwen-vl-max"
-    ALIBABA_CHAT_MODEL = "qwen-max"
+    ALIBABA_CHAT_MODEL = "qwen-plus"
     ALIBABA_COLLECTION_NAME = "pa_procedures_alibaba"
 
 settings = Settings()
