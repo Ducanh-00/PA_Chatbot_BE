@@ -12,19 +12,23 @@ class RAGService:
     def _initialize(self):
         """Lazy initialization of AI components"""
         if self.llm is None:
-            # Sử dụng bộ Chat từ langchain_community - cực kỳ ổn định
             from langchain_community.chat_models.tongyi import ChatTongyi
             from langchain_community.embeddings import DashScopeEmbeddings
             from langchain_qdrant import QdrantVectorStore
             
+            # Khởi tạo LLM
             self.llm = ChatTongyi(
                 model_name=settings.ALIBABA_CHAT_MODEL,
                 dashscope_api_key=settings.DASHSCOPE_API_KEY,
             )
+            
+            # Sửa tham số model_name thành model
             self.embeddings = DashScopeEmbeddings(
-                model_name=settings.ALIBABA_EMBEDDING_MODEL,
+                model=settings.ALIBABA_EMBEDDING_MODEL,
                 dashscope_api_key=settings.DASHSCOPE_API_KEY,
             )
+            
+            # Khởi tạo Vector Store
             self.vector_store = QdrantVectorStore(
                 client=qdrant_manager.get_client(),
                 collection_name=settings.QDRANT_COLLECTION,
@@ -34,7 +38,10 @@ class RAGService:
     def query(self, question: str):
         self._initialize()
         
-        # Tìm kiếm tài liệu
+        # Kiểm tra an toàn trước khi search
+        if not self.vector_store:
+            raise Exception("Vector store failed to initialize")
+            
         docs = self.vector_store.similarity_search(question, k=4)
         context = "\n\n".join([doc.page_content for doc in docs])
         
@@ -54,7 +61,6 @@ QUY TẮC ĐỊNH DẠNG:
             {"role": "user", "content": user_prompt}
         ]
         
-        # ChatTongyi sử dụng phương thức invoke tương tự
         response = self.llm.invoke(messages)
         
         return {
