@@ -12,14 +12,18 @@ class RAGService:
     def _initialize(self):
         """Lazy initialization of AI components"""
         if self.llm is None:
+            # Thiết lập API Key toàn cục cho thư viện dashscope
+            dashscope.api_key = settings.DASHSCOPE_API_KEY
+            
             from langchain_community.chat_models.tongyi import ChatTongyi
             from langchain_community.embeddings import DashScopeEmbeddings
             from langchain_qdrant import QdrantVectorStore
             
-            # Khởi tạo LLM
+            # Khởi tạo LLM với cả 2 cách đặt tên tham số để đảm bảo tương thích
             self.llm = ChatTongyi(
                 model_name=settings.ALIBABA_CHAT_MODEL,
                 dashscope_api_key=settings.DASHSCOPE_API_KEY,
+                api_key=settings.DASHSCOPE_API_KEY # Thêm phương án dự phòng
             )
             
             # Khởi tạo Embeddings
@@ -28,7 +32,7 @@ class RAGService:
                 dashscope_api_key=settings.DASHSCOPE_API_KEY,
             )
             
-            # Sử dụng đúng biến ALIBABA_COLLECTION_NAME
+            # Khởi tạo Vector Store
             self.vector_store = QdrantVectorStore(
                 client=qdrant_manager.get_client(),
                 collection_name=settings.ALIBABA_COLLECTION_NAME,
