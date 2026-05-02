@@ -44,11 +44,17 @@ class RAGService:
             # Log thử cấu hình (không in API Key)
             print(f"Connecting to Qdrant at: {settings.QDRANT_URL or settings.QDRANT_HOST}")
             
+            # Đảm bảo port là số nguyên, mặc định 6333 nếu lỗi
+            try:
+                q_port = int(settings.QDRANT_PORT) if settings.QDRANT_PORT else 6333
+            except:
+                q_port = 6333
+
             client = QdrantClient(
                 url=settings.QDRANT_URL,
                 api_key=settings.QDRANT_API_KEY,
                 host=None if settings.QDRANT_URL else settings.QDRANT_HOST,
-                port=None if settings.QDRANT_URL else int(settings.QDRANT_PORT)
+                port=None if settings.QDRANT_URL else q_port
             )
             
             self.vector_store = QdrantVectorStore(
