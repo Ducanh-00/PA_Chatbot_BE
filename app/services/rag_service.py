@@ -60,7 +60,7 @@ class RAGService:
             self.vector_store = QdrantVectorStore(
                 client=client,
                 collection_name=settings.ALIBABA_COLLECTION_NAME,
-                embeddings=self.embeddings
+                embedding=self.embeddings
             )
             
             self._initialized = True
@@ -106,10 +106,16 @@ QUY TẮC ĐỊNH DẠNG CÂU TRẢ LỜI:
         }
 
     def stream_query(self, question: str):
-        self._initialize()
+        try:
+            self._initialize()
+        except Exception as e:
+            yield {"type": "error", "data": f"Lỗi khởi tạo hệ thống: {str(e)}"}
+            return
         
         if not self.vector_store:
-            raise Exception("Vector store failed to initialize")
+            error_msg = getattr(self, 'init_error', 'Không xác định')
+            yield {"type": "error", "data": f"Kết nối dữ liệu thất bại: {error_msg}"}
+            return
             
         docs = self.vector_store.similarity_search(question, k=4)
         sources = [doc.metadata.get("source", "Unknown") for doc in docs]
