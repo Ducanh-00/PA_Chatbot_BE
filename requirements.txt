@@ -18,3 +18,4 @@ portalocker
 langchain-ollama
 langchain-alibaba
 rank_bm25
+langchain-openai
