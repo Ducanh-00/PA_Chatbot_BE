@@ -16,16 +16,18 @@ class RAGService:
             dashscope.api_key = settings.DASHSCOPE_API_KEY
             dashscope.base_http_api_url = 'https://dashscope-intl.aliyuncs.com/api/v1'
             
-            from langchain_community.chat_models.tongyi import ChatTongyi
+            from langchain_openai import ChatOpenAI
             from langchain_community.embeddings import DashScopeEmbeddings
             from langchain_qdrant import QdrantVectorStore
             
-            # Khởi tạo LLM (Dùng 'model' thay cho 'model_name' để ổn định, bật streaming)
-            self.llm = ChatTongyi(
+            # Khởi tạo LLM dùng OpenAI-compatible endpoint cho Qwen3.6-Plus
+            self.llm = ChatOpenAI(
                 model=settings.ALIBABA_CHAT_MODEL,
-                dashscope_api_key=settings.DASHSCOPE_API_KEY,
+                api_key=settings.DASHSCOPE_API_KEY,
+                base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
                 temperature=0.1,
-                streaming=True
+                streaming=True,
+                model_kwargs={"extra_body": {"enable_thinking": True}}
             )
             
             # Khởi tạo Embeddings
