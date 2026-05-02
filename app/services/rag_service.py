@@ -40,11 +40,15 @@ class RAGService:
             
             # Kết nối Vector Store (Qdrant)
             from qdrant_client import QdrantClient
+            
+            # Log thử cấu hình (không in API Key)
+            print(f"Connecting to Qdrant at: {settings.QDRANT_URL or settings.QDRANT_HOST}")
+            
             client = QdrantClient(
                 url=settings.QDRANT_URL,
                 api_key=settings.QDRANT_API_KEY,
                 host=None if settings.QDRANT_URL else settings.QDRANT_HOST,
-                port=None if settings.QDRANT_URL else settings.QDRANT_PORT
+                port=None if settings.QDRANT_URL else int(settings.QDRANT_PORT)
             )
             
             self.vector_store = QdrantVectorStore(
@@ -54,9 +58,12 @@ class RAGService:
             )
             
             self._initialized = True
-            print(f"RAGService initialized with model: {settings.ALIBABA_CHAT_MODEL}")
+            print(f"RAGService initialized successfully")
         except Exception as e:
-            print(f"Error initializing RAGService: {e}")
+            import traceback
+            error_detail = traceback.format_exc()
+            print(f"CRITICAL: RAGService initialization failed: {error_detail}")
+            self.init_error = str(e)
             self._initialized = False
 
     def query(self, question: str):
