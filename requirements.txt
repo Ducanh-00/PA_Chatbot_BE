@@ -19,3 +19,6 @@ langchain-ollama
 langchain-alibaba
 rank_bm25
 langchain-openai
+sqlalchemy>=2.0.0
+asyncpg>=0.28.0
+greenlet

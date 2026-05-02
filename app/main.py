@@ -15,10 +15,7 @@ app.add_middleware(
 async def root():
     return {"status": "ok"}
 
-# Chỉ import router nếu không phải là môi trường build
-if os.environ.get("RAILWAY_GIT_COMMIT_SHA"):
-    try:
-        from app.controllers import chat_controller
-        app.include_router(chat_controller.router)
-    except Exception as e:
-        print(f"Deferred router load error: {e}")
+from app.controllers import chat_controller, chat_session_controller
+
+app.include_router(chat_controller.router)
+app.include_router(chat_session_controller.router)
