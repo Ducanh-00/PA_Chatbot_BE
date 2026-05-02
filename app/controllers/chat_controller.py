@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import json
 from app.services.rag_service import rag_service
-from app.core.database import AsyncSessionLocal
+from app.core.database import get_db_session
 from app.models.chat import ChatMessage
 
 router = APIRouter(prefix="/api/v1/chat", tags=["Chat"])
@@ -37,7 +37,7 @@ async def chat_stream_endpoint(request: ChatRequest):
     try:
         # Lưu tin nhắn của user nếu có session_id
         if request.session_id:
-            async with AsyncSessionLocal() as db:
+            async with get_db_session() as db:
                 user_msg = ChatMessage(session_id=request.session_id, role="user", content=request.message)
                 db.add(user_msg)
                 await db.commit()
@@ -56,7 +56,7 @@ async def chat_stream_endpoint(request: ChatRequest):
                     
                 # Sau khi stream xong, lưu tin nhắn của AI vào DB
                 if request.session_id and full_response:
-                    async with AsyncSessionLocal() as db:
+                    async with get_db_session() as db:
                         ai_msg = ChatMessage(
                             session_id=request.session_id, 
                             role="assistant", 
