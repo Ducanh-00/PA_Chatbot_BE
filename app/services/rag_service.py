@@ -108,8 +108,21 @@ QUY TẮC ĐỊNH DẠNG CÂU TRẢ LỜI:
         yield {"type": "sources", "data": sources}
         
         # 2. Trả về từng đoạn text khi AI đang sinh (streaming)
+        is_thinking = False
         for chunk in self.llm.stream(messages):
-            if chunk.content:
+            # Trích xuất dữ liệu "suy nghĩ" (Deep Thinking)
+            reasoning = chunk.additional_kwargs.get("reasoning_content")
+            
+            if reasoning:
+                if not is_thinking:
+                    yield {"type": "content", "data": "> *Đang suy nghĩ: "}
+                    is_thinking = True
+                yield {"type": "content", "data": reasoning}
+                
+            elif chunk.content:
+                if is_thinking:
+                    yield {"type": "content", "data": "*\n\n"}
+                    is_thinking = False
                 yield {"type": "content", "data": chunk.content}
 
 rag_service = RAGService()
