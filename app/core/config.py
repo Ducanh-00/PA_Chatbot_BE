@@ -17,7 +17,7 @@ class Settings:
     # Alibaba Cloud Models
     ALIBABA_EMBEDDING_MODEL = os.environ.get("ALIBABA_EMBEDDING_MODEL", "text-embedding-v3")
     ALIBABA_VISION_MODEL = os.environ.get("ALIBABA_VISION_MODEL", "qwen-vl-max")
-    ALIBABA_CHAT_MODEL = os.environ.get("ALIBABA_CHAT_MODEL", "qwen3.6-plus")
+    ALIBABA_CHAT_MODEL = os.environ.get("ALIBABA_CHAT_MODEL", "qwen-plus")
     ALIBABA_COLLECTION_NAME = os.environ.get("ALIBABA_COLLECTION_NAME", "pa_procedures_alibaba")
 
 settings = Settings()
