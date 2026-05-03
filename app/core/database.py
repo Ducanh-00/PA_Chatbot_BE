@@ -1,27 +1,35 @@
-from qdrant_client import QdrantClient
-from app.core.config import settings
+import os
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.orm import declarative_base
 
-class QdrantManager:
-    _client = None
+Base = declarative_base()
 
-    @classmethod
-    def get_client(cls):
-        if cls._client is None:
-            # Ưu tiên kết nối qua URL (Qdrant Cloud hoặc Server Docker)
-            if settings.QDRANT_URL:
-                print(f"   [DATABASE] Connecting to Qdrant via URL: {settings.QDRANT_URL}")
-                cls._client = QdrantClient(
-                    url=settings.QDRANT_URL, 
-                    api_key=settings.QDRANT_API_KEY
-                )
-            elif settings.QDRANT_HOST:
-                # Dùng cho môi trường Docker Compose (host='qdrant')
-                print(f"   [DATABASE] Connecting to Qdrant Host: {settings.QDRANT_HOST}:{settings.QDRANT_PORT}")
-                cls._client = QdrantClient(host=settings.QDRANT_HOST, port=int(settings.QDRANT_PORT))
-            else:
-                # Dùng cho chạy local file
-                print(f"   [DATABASE] Initializing Local Qdrant Storage: {settings.QDRANT_PATH}")
-                cls._client = QdrantClient(path=settings.QDRANT_PATH)
-        return cls._client
+# Lazy init - chỉ tạo engine khi thực sự cần (không crash app lúc khởi động)
+_engine = None
+_AsyncSessionLocal = None
 
-qdrant_manager = QdrantManager()
+def _get_engine():
+    global _engine, _AsyncSessionLocal
+    if _engine is None:
+        DATABASE_URL = os.environ.get("DATABASE_URL")
+        if not DATABASE_URL:
+            raise ValueError("DATABASE_URL chưa được cấu hình trong biến môi trường")
+        _engine = create_async_engine(DATABASE_URL, echo=False)
+        _AsyncSessionLocal = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
+    return _engine, _AsyncSessionLocal
+
+# Dùng trong các controller qua FastAPI Depends
+async def get_db():
+    _, SessionLocal = _get_engine()
+    async with SessionLocal() as session:
+        yield session
+
+# Dùng trực tiếp trong chat_controller (không qua Depends)
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def get_db_session():
+    _, SessionLocal = _get_engine()
+    async with SessionLocal() as session:
+        yield session
+
