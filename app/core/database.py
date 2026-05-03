@@ -1,7 +1,6 @@
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
-from app.core.config import settings
 
 Base = declarative_base()
 
@@ -12,9 +11,10 @@ _AsyncSessionLocal = None
 def _get_engine():
     global _engine, _AsyncSessionLocal
     if _engine is None:
-        DATABASE_URL = settings.DATABASE_URL
-        if not DATABASE_URL:
+        raw_db_url = os.environ.get("DATABASE_URL")
+        if not raw_db_url:
             raise ValueError("DATABASE_URL chưa được cấu hình trong biến môi trường")
+        DATABASE_URL = raw_db_url.strip()
         _engine = create_async_engine(DATABASE_URL, echo=False)
         _AsyncSessionLocal = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
     return _engine, _AsyncSessionLocal
